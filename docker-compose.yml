@@ -11,8 +11,8 @@ services:
     restart: unless-stopped
     environment:
       POSTGRES_DB: compo_db
-      POSTGRES_USER: compo_user
-      POSTGRES_PASSWORD: compo_pass
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
     ports:
       - "5432:5432"
     volumes:
@@ -20,7 +20,7 @@ services:
     networks:
       - compo_network
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U compo_user -d compo_db"]
+      test: ["CMD-SHELL", "pg_isready -U postgres -d compo_db"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -43,8 +43,8 @@ services:
     environment:
       # Sobrescribir application.properties para apuntar al contenedor de postgres
       SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/compo_db
-      SPRING_DATASOURCE_USERNAME: compo_user
-      SPRING_DATASOURCE_PASSWORD: compo_pass
+      SPRING_DATASOURCE_USERNAME: postgres
+      SPRING_DATASOURCE_PASSWORD: postgres
       SPRING_JPA_HIBERNATE_DDL_AUTO: update
       SPRING_JPA_SHOW_SQL: "false"
       # JWT
