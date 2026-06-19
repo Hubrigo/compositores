@@ -14,12 +14,14 @@ RUN mvn package -DskipTests -B
 
 # ─────────────────────────────────────────────
 # Stage 2: Runtime
+# eclipse-temurin:17-jre soporta amd64 y arm64 (Apple Silicon)
+# la variante -alpine NO tiene imagen arm64
 # ─────────────────────────────────────────────
-FROM eclipse-temurin:17-jre-alpine
+FROM eclipse-temurin:17-jre
 WORKDIR /app
 
-# Crear usuario no-root por seguridad
-RUN addgroup -S compo && adduser -S compo -G compo
+# Crear usuario no-root por seguridad (sintaxis Debian/Ubuntu)
+RUN groupadd --system compo && useradd --system --gid compo compo
 
 # Copiar el artefacto generado
 COPY --from=build /app/target/*.jar app.jar

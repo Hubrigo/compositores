@@ -1,0 +1,8 @@
+target/
+.github/
+*.md
+*.log
+.mvn/
+.idea/
+.vscode/
+*.iml
