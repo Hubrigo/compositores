@@ -1,0 +1,897 @@
+{
+  "info": {
+    "_postman_id": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+    "name": "Compo - API de Gestión Musical",
+    "description": "Colección completa de endpoints para la API REST del sistema Compo. Incluye autenticación JWT y CRUD completo de todas las entidades del dominio musical.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://localhost:8080",
+      "type": "string",
+      "description": "URL base del backend Spring Boot"
+    },
+    {
+      "key": "token",
+      "value": "",
+      "type": "string",
+      "description": "JWT token obtenido al hacer login. Se llena automáticamente con el script del request de login."
+    }
+  ],
+  "item": [
+    {
+      "name": "Auth",
+      "description": "Endpoints de autenticación. No requieren token JWT.",
+      "item": [
+        {
+          "name": "Login",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    const json = pm.response.json();",
+                  "    pm.collectionVariables.set('token', json.token);",
+                  "    console.log('Token guardado:', json.token);",
+                  "    pm.test('Login exitoso - token guardado', function () {",
+                  "        pm.expect(json.token).to.be.a('string').and.not.empty;",
+                  "    });",
+                  "    pm.test('Rol presente en respuesta', function () {",
+                  "        pm.expect(json.rol).to.be.oneOf(['ADMIN', 'USER']);",
+                  "    });",
+                  "} else {",
+                  "    pm.test('Login fallido', function () {",
+                  "        pm.expect(pm.response.code).to.equal(200);",
+                  "    });",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"cedula\": \"1000000001\",\n  \"password\": \"Admin123\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/api/auth/login",
+              "host": ["{{base_url}}"],
+              "path": ["api", "auth", "login"]
+            },
+            "description": "Inicia sesión con cédula y contraseña. El token JWT se guarda automáticamente en la variable `token` de la colección."
+          },
+          "response": [
+            {
+              "name": "Login exitoso (ADMIN)",
+              "originalRequest": {
+                "method": "POST",
+                "header": [{"key": "Content-Type", "value": "application/json"}],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"cedula\": \"1000000001\",\n  \"password\": \"Admin123\"\n}"
+                },
+                "url": {"raw": "{{base_url}}/api/auth/login"}
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "body": "{\n  \"token\": \"eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiIxMDAwMDAwMDAxIiwicm9sIjoiQURNSU4iLCJpYXQiOjE3MDA4NjQwMDAsImV4cCI6MTcwMDk1MDQwMH0.ejemplo\",\n  \"tipo\": \"Bearer\",\n  \"cedula\": \"1000000001\",\n  \"nombre\": \"Administrador Principal\",\n  \"rol\": \"ADMIN\"\n}"
+            }
+          ]
+        },
+        {
+          "name": "Register",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"cedula\": \"1000000099\",\n  \"password\": \"NuevoUser123\",\n  \"nombre\": \"Juan Nuevo Usuario\",\n  \"email\": \"juan.nuevo@compo.com\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/api/auth/register",
+              "host": ["{{base_url}}"],
+              "path": ["api", "auth", "register"]
+            },
+            "description": "Registra un nuevo usuario con rol USER por defecto."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Compositores",
+      "description": "CRUD de compositores. Todos los requests requieren el header Authorization con el JWT.",
+      "item": [
+        {
+          "name": "Obtener todos los compositores",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/compositores",
+              "host": ["{{base_url}}"],
+              "path": ["api", "compositores"]
+            },
+            "description": "Retorna la lista de todos los compositores activos."
+          },
+          "response": [
+            {
+              "name": "Lista de compositores",
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "body": "[\n  {\n    \"id\": 1,\n    \"nombre\": \"Ludwig van\",\n    \"apellido\": \"Beethoven\",\n    \"nacionalidad\": \"Alemán\",\n    \"fechaNacimiento\": \"1770-12-17\",\n    \"activo\": true\n  },\n  {\n    \"id\": 2,\n    \"nombre\": \"Wolfgang Amadeus\",\n    \"apellido\": \"Mozart\",\n    \"nacionalidad\": \"Austriaco\",\n    \"fechaNacimiento\": \"1756-01-27\",\n    \"activo\": true\n  }\n]"
+            }
+          ]
+        },
+        {
+          "name": "Obtener compositor por ID",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/compositores/1",
+              "host": ["{{base_url}}"],
+              "path": ["api", "compositores", "1"]
+            },
+            "description": "Retorna un compositor específico por su ID."
+          },
+          "response": []
+        },
+        {
+          "name": "Crear compositor",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombre\": \"Franz\",\n  \"apellido\": \"Schubert\",\n  \"nacionalidad\": \"Austriaco\",\n  \"fechaNacimiento\": \"1797-01-31\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/api/compositores",
+              "host": ["{{base_url}}"],
+              "path": ["api", "compositores"]
+            },
+            "description": "Crea un nuevo compositor. Requiere rol ADMIN."
+          },
+          "response": [
+            {
+              "name": "Compositor creado",
+              "status": "Created",
+              "code": 201,
+              "_postman_previewlanguage": "json",
+              "body": "{\n  \"id\": 4,\n  \"nombre\": \"Franz\",\n  \"apellido\": \"Schubert\",\n  \"nacionalidad\": \"Austriaco\",\n  \"fechaNacimiento\": \"1797-01-31\",\n  \"activo\": true\n}"
+            }
+          ]
+        },
+        {
+          "name": "Actualizar compositor",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombre\": \"Franz Peter\",\n  \"apellido\": \"Schubert\",\n  \"nacionalidad\": \"Austriaco\",\n  \"fechaNacimiento\": \"1797-01-31\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/api/compositores/4",
+              "host": ["{{base_url}}"],
+              "path": ["api", "compositores", "4"]
+            },
+            "description": "Actualiza un compositor existente por su ID. Requiere rol ADMIN."
+          },
+          "response": []
+        },
+        {
+          "name": "Eliminar compositor",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/compositores/4",
+              "host": ["{{base_url}}"],
+              "path": ["api", "compositores", "4"]
+            },
+            "description": "Eliminación lógica (soft delete) de un compositor. Pone activo=false. Requiere rol ADMIN."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Directores",
+      "description": "CRUD de directores. Todos los requests requieren el header Authorization con el JWT.",
+      "item": [
+        {
+          "name": "Obtener todos los directores",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/directores",
+              "host": ["{{base_url}}"],
+              "path": ["api", "directores"]
+            },
+            "description": "Retorna la lista de todos los directores activos."
+          },
+          "response": [
+            {
+              "name": "Lista de directores",
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "body": "[\n  {\n    \"id\": 1,\n    \"nombre\": \"Herbert von\",\n    \"apellido\": \"Karajan\",\n    \"nacionalidad\": \"Austriaco\",\n    \"fechaNacimiento\": \"1908-04-05\",\n    \"activo\": true\n  },\n  {\n    \"id\": 2,\n    \"nombre\": \"Carlos\",\n    \"apellido\": \"Kleiber\",\n    \"nacionalidad\": \"Alemán\",\n    \"fechaNacimiento\": \"1930-07-03\",\n    \"activo\": true\n  }\n]"
+            }
+          ]
+        },
+        {
+          "name": "Obtener director por ID",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/directores/1",
+              "host": ["{{base_url}}"],
+              "path": ["api", "directores", "1"]
+            },
+            "description": "Retorna un director específico por su ID."
+          },
+          "response": []
+        },
+        {
+          "name": "Crear director",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombre\": \"Leonard\",\n  \"apellido\": \"Bernstein\",\n  \"nacionalidad\": \"Estadounidense\",\n  \"fechaNacimiento\": \"1918-08-25\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/api/directores",
+              "host": ["{{base_url}}"],
+              "path": ["api", "directores"]
+            },
+            "description": "Crea un nuevo director. Requiere rol ADMIN."
+          },
+          "response": [
+            {
+              "name": "Director creado",
+              "status": "Created",
+              "code": 201,
+              "_postman_previewlanguage": "json",
+              "body": "{\n  \"id\": 3,\n  \"nombre\": \"Leonard\",\n  \"apellido\": \"Bernstein\",\n  \"nacionalidad\": \"Estadounidense\",\n  \"fechaNacimiento\": \"1918-08-25\",\n  \"activo\": true\n}"
+            }
+          ]
+        },
+        {
+          "name": "Actualizar director",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombre\": \"Leonard Louis\",\n  \"apellido\": \"Bernstein\",\n  \"nacionalidad\": \"Estadounidense\",\n  \"fechaNacimiento\": \"1918-08-25\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/api/directores/3",
+              "host": ["{{base_url}}"],
+              "path": ["api", "directores", "3"]
+            },
+            "description": "Actualiza un director existente. Requiere rol ADMIN."
+          },
+          "response": []
+        },
+        {
+          "name": "Eliminar director",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/directores/3",
+              "host": ["{{base_url}}"],
+              "path": ["api", "directores", "3"]
+            },
+            "description": "Eliminación lógica de un director. Requiere rol ADMIN."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Intérpretes",
+      "description": "CRUD de intérpretes. Todos los requests requieren el header Authorization con el JWT.",
+      "item": [
+        {
+          "name": "Obtener todos los intérpretes",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/interpretes",
+              "host": ["{{base_url}}"],
+              "path": ["api", "interpretes"]
+            },
+            "description": "Retorna la lista de todos los intérpretes activos."
+          },
+          "response": [
+            {
+              "name": "Lista de intérpretes",
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "body": "[\n  {\n    \"id\": 1,\n    \"nombre\": \"Plácido\",\n    \"apellido\": \"Domingo\",\n    \"tipoVozOInstrumento\": \"Tenor\",\n    \"nacionalidad\": \"Español\",\n    \"fechaNacimiento\": \"1941-01-21\",\n    \"activo\": true\n  },\n  {\n    \"id\": 2,\n    \"nombre\": \"Martha\",\n    \"apellido\": \"Argerich\",\n    \"tipoVozOInstrumento\": \"Piano\",\n    \"nacionalidad\": \"Argentina\",\n    \"fechaNacimiento\": \"1941-06-05\",\n    \"activo\": true\n  },\n  {\n    \"id\": 3,\n    \"nombre\": \"Itzhak\",\n    \"apellido\": \"Perlman\",\n    \"tipoVozOInstrumento\": \"Violín\",\n    \"nacionalidad\": \"Israelí\",\n    \"fechaNacimiento\": \"1945-08-31\",\n    \"activo\": true\n  }\n]"
+            }
+          ]
+        },
+        {
+          "name": "Obtener intérprete por ID",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/interpretes/1",
+              "host": ["{{base_url}}"],
+              "path": ["api", "interpretes", "1"]
+            },
+            "description": "Retorna un intérprete específico por su ID."
+          },
+          "response": []
+        },
+        {
+          "name": "Crear intérprete",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombre\": \"Yo-Yo\",\n  \"apellido\": \"Ma\",\n  \"tipoVozOInstrumento\": \"Violonchelo\",\n  \"nacionalidad\": \"Estadounidense\",\n  \"fechaNacimiento\": \"1955-10-07\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/api/interpretes",
+              "host": ["{{base_url}}"],
+              "path": ["api", "interpretes"]
+            },
+            "description": "Crea un nuevo intérprete. Requiere rol ADMIN."
+          },
+          "response": [
+            {
+              "name": "Intérprete creado",
+              "status": "Created",
+              "code": 201,
+              "_postman_previewlanguage": "json",
+              "body": "{\n  \"id\": 4,\n  \"nombre\": \"Yo-Yo\",\n  \"apellido\": \"Ma\",\n  \"tipoVozOInstrumento\": \"Violonchelo\",\n  \"nacionalidad\": \"Estadounidense\",\n  \"fechaNacimiento\": \"1955-10-07\",\n  \"activo\": true\n}"
+            }
+          ]
+        },
+        {
+          "name": "Actualizar intérprete",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombre\": \"Yo-Yo\",\n  \"apellido\": \"Ma\",\n  \"tipoVozOInstrumento\": \"Violonchelo y Erhu\",\n  \"nacionalidad\": \"Estadounidense\",\n  \"fechaNacimiento\": \"1955-10-07\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/api/interpretes/4",
+              "host": ["{{base_url}}"],
+              "path": ["api", "interpretes", "4"]
+            },
+            "description": "Actualiza un intérprete existente. Requiere rol ADMIN."
+          },
+          "response": []
+        },
+        {
+          "name": "Eliminar intérprete",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/interpretes/4",
+              "host": ["{{base_url}}"],
+              "path": ["api", "interpretes", "4"]
+            },
+            "description": "Eliminación lógica de un intérprete. Requiere rol ADMIN."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Obras",
+      "description": "CRUD de obras musicales, incluyendo la relación ManyToMany con compositores. Todos los requests requieren JWT.",
+      "item": [
+        {
+          "name": "Obtener todas las obras",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/obras",
+              "host": ["{{base_url}}"],
+              "path": ["api", "obras"]
+            },
+            "description": "Retorna todas las obras activas, incluyendo la lista de sus compositores."
+          },
+          "response": [
+            {
+              "name": "Lista de obras",
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "body": "[\n  {\n    \"id\": 1,\n    \"titulo\": \"Sinfonía N° 9 en Re menor\",\n    \"descripcion\": \"La famosa novena sinfonía de Beethoven, con el himno Oda a la Alegría en el cuarto movimiento.\",\n    \"genero\": \"Sinfonía\",\n    \"fechaCreacion\": \"1824-05-07\",\n    \"compositores\": [\n      {\n        \"id\": 1,\n        \"nombre\": \"Ludwig van\",\n        \"apellido\": \"Beethoven\"\n      }\n    ],\n    \"activo\": true\n  },\n  {\n    \"id\": 2,\n    \"titulo\": \"Requiem en Re menor K. 626\",\n    \"descripcion\": \"El réquiem inacabado de Mozart.\",\n    \"genero\": \"Música Sacra\",\n    \"fechaCreacion\": \"1791-12-05\",\n    \"compositores\": [\n      {\n        \"id\": 2,\n        \"nombre\": \"Wolfgang Amadeus\",\n        \"apellido\": \"Mozart\"\n      },\n      {\n        \"id\": 3,\n        \"nombre\": \"Johann Sebastian\",\n        \"apellido\": \"Bach\"\n      }\n    ],\n    \"activo\": true\n  }\n]"
+            }
+          ]
+        },
+        {
+          "name": "Obtener obra por ID",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/obras/1",
+              "host": ["{{base_url}}"],
+              "path": ["api", "obras", "1"]
+            },
+            "description": "Retorna una obra específica con su lista de compositores."
+          },
+          "response": []
+        },
+        {
+          "name": "Crear obra",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"titulo\": \"Las cuatro estaciones\",\n  \"descripcion\": \"Conjunto de cuatro conciertos para violín compuestos por Antonio Vivaldi, publicados en 1725.\",\n  \"genero\": \"Concierto\",\n  \"fechaCreacion\": \"1725-01-01\",\n  \"compositorIds\": [1, 2]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/api/obras",
+              "host": ["{{base_url}}"],
+              "path": ["api", "obras"]
+            },
+            "description": "Crea una nueva obra musical. El campo compositorIds es una lista de IDs de compositores (relación ManyToMany). Requiere rol ADMIN."
+          },
+          "response": [
+            {
+              "name": "Obra creada",
+              "status": "Created",
+              "code": 201,
+              "_postman_previewlanguage": "json",
+              "body": "{\n  \"id\": 3,\n  \"titulo\": \"Las cuatro estaciones\",\n  \"descripcion\": \"Conjunto de cuatro conciertos para violín compuestos por Antonio Vivaldi, publicados en 1725.\",\n  \"genero\": \"Concierto\",\n  \"fechaCreacion\": \"1725-01-01\",\n  \"compositores\": [\n    { \"id\": 1, \"nombre\": \"Ludwig van\", \"apellido\": \"Beethoven\" },\n    { \"id\": 2, \"nombre\": \"Wolfgang Amadeus\", \"apellido\": \"Mozart\" }\n  ],\n  \"activo\": true\n}"
+            }
+          ]
+        },
+        {
+          "name": "Actualizar obra",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"titulo\": \"Las cuatro estaciones - Op. 8\",\n  \"descripcion\": \"Conjunto de cuatro conciertos para violín compuestos por Antonio Vivaldi, publicados en 1725 como parte de Il cimento dell'armonia e dell'inventione.\",\n  \"genero\": \"Concierto Barroco\",\n  \"fechaCreacion\": \"1725-01-01\",\n  \"compositorIds\": [1]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/api/obras/3",
+              "host": ["{{base_url}}"],
+              "path": ["api", "obras", "3"]
+            },
+            "description": "Actualiza una obra existente y su lista de compositores. Requiere rol ADMIN."
+          },
+          "response": []
+        },
+        {
+          "name": "Eliminar obra",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/obras/3",
+              "host": ["{{base_url}}"],
+              "path": ["api", "obras", "3"]
+            },
+            "description": "Eliminación lógica de una obra. Requiere rol ADMIN."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Interpretaciones",
+      "description": "CRUD de interpretaciones musicales. Soporta filtrado por intérprete y por director. Todos los requests requieren JWT.",
+      "item": [
+        {
+          "name": "Obtener todas las interpretaciones",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/interpretaciones",
+              "host": ["{{base_url}}"],
+              "path": ["api", "interpretaciones"]
+            },
+            "description": "Retorna todas las interpretaciones activas con sus relaciones (obra, intérprete, director)."
+          },
+          "response": [
+            {
+              "name": "Lista de interpretaciones",
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "body": "[\n  {\n    \"id\": 1,\n    \"obra\": {\n      \"id\": 1,\n      \"titulo\": \"Sinfonía N° 9 en Re menor\"\n    },\n    \"interprete\": {\n      \"id\": 3,\n      \"nombre\": \"Itzhak\",\n      \"apellido\": \"Perlman\"\n    },\n    \"director\": {\n      \"id\": 1,\n      \"nombre\": \"Herbert von\",\n      \"apellido\": \"Karajan\"\n    },\n    \"fechaInterpretacion\": \"2023-10-15\",\n    \"lugar\": \"Teatro Colón, Buenos Aires\",\n    \"observaciones\": \"Interpretación magistral en el bicentenario del estreno.\",\n    \"activo\": true\n  }\n]"
+            }
+          ]
+        },
+        {
+          "name": "Obtener interpretación por ID",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/interpretaciones/1",
+              "host": ["{{base_url}}"],
+              "path": ["api", "interpretaciones", "1"]
+            },
+            "description": "Retorna una interpretación específica por su ID."
+          },
+          "response": []
+        },
+        {
+          "name": "Obtener interpretaciones por intérprete",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/interpretaciones/interprete/2",
+              "host": ["{{base_url}}"],
+              "path": ["api", "interpretaciones", "interprete", "2"]
+            },
+            "description": "Filtra las interpretaciones por el ID del intérprete. Útil para ver el historial de actuaciones de Martha Argerich (id=2), por ejemplo."
+          },
+          "response": [
+            {
+              "name": "Interpretaciones de Martha Argerich",
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "body": "[\n  {\n    \"id\": 3,\n    \"obra\": {\n      \"id\": 1,\n      \"titulo\": \"Sinfonía N° 9 en Re menor\"\n    },\n    \"interprete\": {\n      \"id\": 2,\n      \"nombre\": \"Martha\",\n      \"apellido\": \"Argerich\"\n    },\n    \"director\": {\n      \"id\": 1,\n      \"nombre\": \"Herbert von\",\n      \"apellido\": \"Karajan\"\n    },\n    \"fechaInterpretacion\": \"2024-03-08\",\n    \"lugar\": \"Filarmónica de Berlín\",\n    \"observaciones\": \"Concierto especial por el día internacional de la mujer.\",\n    \"activo\": true\n  }\n]"
+            }
+          ]
+        },
+        {
+          "name": "Obtener interpretaciones por director",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/interpretaciones/director/1",
+              "host": ["{{base_url}}"],
+              "path": ["api", "interpretaciones", "director", "1"]
+            },
+            "description": "Filtra las interpretaciones por el ID del director. Útil para ver todas las actuaciones dirigidas por Karajan (id=1)."
+          },
+          "response": [
+            {
+              "name": "Interpretaciones de Karajan",
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "body": "[\n  {\n    \"id\": 1,\n    \"obra\": { \"id\": 1, \"titulo\": \"Sinfonía N° 9 en Re menor\" },\n    \"interprete\": { \"id\": 3, \"nombre\": \"Itzhak\", \"apellido\": \"Perlman\" },\n    \"director\": { \"id\": 1, \"nombre\": \"Herbert von\", \"apellido\": \"Karajan\" },\n    \"fechaInterpretacion\": \"2023-10-15\",\n    \"lugar\": \"Teatro Colón, Buenos Aires\",\n    \"observaciones\": \"Interpretación magistral en el bicentenario del estreno.\",\n    \"activo\": true\n  },\n  {\n    \"id\": 3,\n    \"obra\": { \"id\": 1, \"titulo\": \"Sinfonía N° 9 en Re menor\" },\n    \"interprete\": { \"id\": 2, \"nombre\": \"Martha\", \"apellido\": \"Argerich\" },\n    \"director\": { \"id\": 1, \"nombre\": \"Herbert von\", \"apellido\": \"Karajan\" },\n    \"fechaInterpretacion\": \"2024-03-08\",\n    \"lugar\": \"Filarmónica de Berlín\",\n    \"observaciones\": \"Concierto especial por el día internacional de la mujer.\",\n    \"activo\": true\n  }\n]"
+            }
+          ]
+        },
+        {
+          "name": "Crear interpretación",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"obraId\": 2,\n  \"interpreteId\": 2,\n  \"directorId\": 2,\n  \"fechaInterpretacion\": \"2024-06-15\",\n  \"lugar\": \"Gran Teatre del Liceu, Barcelona\",\n  \"observaciones\": \"Concierto de temporada de verano con programa barroco.\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/api/interpretaciones",
+              "host": ["{{base_url}}"],
+              "path": ["api", "interpretaciones"]
+            },
+            "description": "Registra una nueva interpretación musical. Referencia obra, intérprete y director por sus IDs. Requiere rol ADMIN."
+          },
+          "response": [
+            {
+              "name": "Interpretación creada",
+              "status": "Created",
+              "code": 201,
+              "_postman_previewlanguage": "json",
+              "body": "{\n  \"id\": 4,\n  \"obra\": {\n    \"id\": 2,\n    \"titulo\": \"Requiem en Re menor K. 626\"\n  },\n  \"interprete\": {\n    \"id\": 2,\n    \"nombre\": \"Martha\",\n    \"apellido\": \"Argerich\"\n  },\n  \"director\": {\n    \"id\": 2,\n    \"nombre\": \"Carlos\",\n    \"apellido\": \"Kleiber\"\n  },\n  \"fechaInterpretacion\": \"2024-06-15\",\n  \"lugar\": \"Gran Teatre del Liceu, Barcelona\",\n  \"observaciones\": \"Concierto de temporada de verano con programa barroco.\",\n  \"activo\": true\n}"
+            }
+          ]
+        },
+        {
+          "name": "Actualizar interpretación",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"obraId\": 2,\n  \"interpreteId\": 2,\n  \"directorId\": 2,\n  \"fechaInterpretacion\": \"2024-06-15\",\n  \"lugar\": \"Gran Teatre del Liceu, Barcelona\",\n  \"observaciones\": \"Concierto de temporada de verano. Sold out - 2200 asistentes.\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/api/interpretaciones/4",
+              "host": ["{{base_url}}"],
+              "path": ["api", "interpretaciones", "4"]
+            },
+            "description": "Actualiza una interpretación existente por su ID. Requiere rol ADMIN."
+          },
+          "response": []
+        },
+        {
+          "name": "Eliminar interpretación",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/interpretaciones/4",
+              "host": ["{{base_url}}"],
+              "path": ["api", "interpretaciones", "4"]
+            },
+            "description": "Eliminación lógica de una interpretación (soft delete). Requiere rol ADMIN."
+          },
+          "response": []
+        }
+      ]
+    }
+  ]
+}

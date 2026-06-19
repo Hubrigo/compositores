@@ -1,0 +1,86 @@
+version: "3.9"
+
+services:
+
+  # ─────────────────────────────────────────────
+  # Base de datos PostgreSQL 16
+  # ─────────────────────────────────────────────
+  postgres:
+    image: postgres:16-alpine
+    container_name: compo_postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: compo_db
+      POSTGRES_USER: compo_user
+      POSTGRES_PASSWORD: compo_pass
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - compo_network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U compo_user -d compo_db"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+
+  # ─────────────────────────────────────────────
+  # Backend Spring Boot 3
+  # ─────────────────────────────────────────────
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: compo_backend
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    ports:
+      - "8080:8080"
+    environment:
+      # Sobrescribir application.properties para apuntar al contenedor de postgres
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/compo_db
+      SPRING_DATASOURCE_USERNAME: compo_user
+      SPRING_DATASOURCE_PASSWORD: compo_pass
+      SPRING_JPA_HIBERNATE_DDL_AUTO: update
+      SPRING_JPA_SHOW_SQL: "false"
+      # JWT
+      JWT_SECRET: compoSecretKeyForJWTTokenGeneration2024VeryLong
+      JWT_EXPIRATION: "86400000"
+      # Logging
+      LOGGING_LEVEL_COM_COMPO: INFO
+    networks:
+      - compo_network
+
+  # ─────────────────────────────────────────────
+  # Frontend Vue 3 + Nginx
+  # ─────────────────────────────────────────────
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: compo_frontend
+    restart: unless-stopped
+    depends_on:
+      - backend
+    ports:
+      - "80:80"
+    networks:
+      - compo_network
+
+# ─────────────────────────────────────────────
+# Redes
+# ─────────────────────────────────────────────
+networks:
+  compo_network:
+    driver: bridge
+
+# ─────────────────────────────────────────────
+# Volúmenes persistentes
+# ─────────────────────────────────────────────
+volumes:
+  postgres_data:
+    driver: local
