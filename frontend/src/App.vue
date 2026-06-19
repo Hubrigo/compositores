@@ -8,18 +8,18 @@
 </template>
 
 <script setup>
-import { computed, watch } from 'vue'
+import { ref, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import Navbar from './components/Navbar.vue'
 
 const route = useRoute()
 
-const isAuthenticated = computed(() => {
-  return !!localStorage.getItem('token')
-})
+const isAuthenticated = ref(!!localStorage.getItem('token'))
 
-// Re-evaluate on route change so navbar shows/hides correctly after login/logout
-watch(() => route.path, () => {})
+// localStorage no es reactivo: actualizamos el ref en cada cambio de ruta
+watch(() => route.path, () => {
+  isAuthenticated.value = !!localStorage.getItem('token')
+})
 </script>
 
 <style>
